@@ -49,7 +49,7 @@ func retrieveStockInfoSvc() string {
 	var apiKey string
 	var stockSymbol string
 
-	os.Setenv("FR_Stock_API_Key", "C227WD9W3LUVKVV9")
+	os.Setenv("FR_Stock_API_Key", "xxxxxx")
 	os.Setenv("FR_Stock_Symbol", "IBM")
 
 	apiKey = os.Getenv("FR_Stock_API_Key")
