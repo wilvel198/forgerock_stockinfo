@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgerock-go-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: forgerock-go-app
+  template:
+    metadata:
+      labels:
+        app: forgerock-go-app
+    spec:
+      containers:
+        - name: forgerock-go-container
+          image: wvlithium31/forgerock_go
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8080
