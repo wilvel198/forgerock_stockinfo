@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: forgerock-go-container
-          image: wvlithium31/forgerock_go
+          image: wvlithium31/forgerock_stockinfo
           resources:
             limits:
               memory: "128Mi"

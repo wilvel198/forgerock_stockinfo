@@ -1,6 +1,11 @@
 # syntax=docker/dockerfile:1
 
 FROM golang:1.16-alpine
+
+ENV FR_Stock_API_Key=C227WD9W3LUVKVV9
+ENV FR_Stock_Symbol=IBM
+ENV FR_Stock_Days=20
+
 WORKDIR /app
 
 COPY go.mod ./

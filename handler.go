@@ -15,32 +15,28 @@ var statusInfo = []StatusInfo{
 	{Status: "Ok", Info: "Service is running"},
 }
 
+// function to verify if the service is running
 func ServiceStatus(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Endpoint hit: Service Status")
 	json.NewEncoder(w).Encode(statusInfo)
 }
 
+// function used to retrieve the stock information
 func GetStockInfo(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Endpoint hit: return stock info")
 	json.NewEncoder(w).Encode(processGetStockInfo())
 }
 
+// function to process the stock information
 func processGetStockInfo() StockInfo {
 	fmt.Println("<------ Processing stock information ------->")
-	var stockDataResults StockInfo
+
 	var serviceData string
-
-	stockDataResults.AvgClosing = 65.76
-	stockDataResults.Name = "IBM"
-	stockDataResults.Days = 20
-
 	serviceData = retrieveStockInfoSvc()
 	return processJsonString(serviceData)
 
-	//fmt.Println(serviceData)
-	//return stockDataResults
 }
 
 // Service to retrieve stock information from data provider
@@ -48,14 +44,15 @@ func retrieveStockInfoSvc() string {
 	var stockInformation string
 	var apiKey string
 	var stockSymbol string
-
-	os.Setenv("FR_Stock_API_Key", "xxxxxx")
-	os.Setenv("FR_Stock_Symbol", "IBM")
+	var serviceURL string
 
 	apiKey = os.Getenv("FR_Stock_API_Key")
 	stockSymbol = os.Getenv("FR_Stock_Symbol")
 
-	response, err := http.Get("https://www.alphavantage.co/query?apikey=" + apiKey + "&function=TIME_SERIES_DAILY_ADJUSTED&symbol=" + stockSymbol)
+	serviceURL = "https://www.alphavantage.co/query?apikey=" + apiKey + "&function=TIME_SERIES_DAILY_ADJUSTED&symbol=" + stockSymbol
+	response, err := http.Get(serviceURL)
+
+	//fmt.Println("URL Called ----> " + serviceURL)
 
 	if err != nil {
 		fmt.Print(err.Error())
@@ -78,7 +75,15 @@ func processJsonString(stockJsonValue string) StockInfo {
 	fmt.Println("------> Processing the data from service <--------")
 
 	var stockDataResults StockInfo
-	stockDataResults.Name = "IBM"
+	var stockSymbol string
+	var dayValue float64
+
+	stockSymbol = os.Getenv("FR_Stock_Symbol")
+
+	dayValue, _ = strconv.ParseFloat(os.Getenv("FR_Stock_Days"), 64)
+
+	fmt.Println("the number of days in the env variable")
+	fmt.Println(dayValue)
 
 	byteValue := []byte(stockJsonValue)
 
@@ -86,23 +91,17 @@ func processJsonString(stockJsonValue string) StockInfo {
 	json.Unmarshal([]byte(byteValue), &result)
 
 	var tempData = result["Time Series (Daily)"]
-	//var symbolInfo = result["Meta Data"]
-
-	fmt.Println("Time Series Daily info ---->")
-	fmt.Println(tempData)
 
 	jsonStr, err := json.Marshal(tempData)
 	if err != nil {
 		fmt.Printf("Error: %s", err.Error())
-	} else {
-		fmt.Println(string(jsonStr))
 	}
 
 	plan := []byte(jsonStr)
 
 	var data map[string]*stockData
+
 	json.Unmarshal(plan, &data)
-	//fmt.Printf("Data is %+v\n", data)
 
 	var sum float64 = 0
 	var countItems float64 = 0
@@ -118,14 +117,19 @@ func processJsonString(stockJsonValue string) StockInfo {
 			return stockDataResults
 		}
 
-		sum = sum + stockCloseVal
-
-		fmt.Println("Key:", key, "=>", "Element:", element.FourClose)
+		if countItems < dayValue {
+			sum = sum + stockCloseVal
+		}
+		log.Println("Key:", key, "=>", "Element:", element.FourClose)
 	}
 
-	stockDataResults.Days = int(countItems)
-	stockDataResults.AvgClosing = roundFloat((sum / countItems), 2)
-	fmt.Println("the sum is " + fmt.Sprintf("%f", sum))
+	stockDataResults.Name = stockSymbol
+	stockDataResults.Days = int(dayValue)
+	stockDataResults.AvgClosing = (sum / dayValue)
+
+	log.Println("the sum is " + fmt.Sprintf("%f", sum))
+	sum = 0
+	countItems = 0
 	fmt.Println("-------> SUCCESS !!!!! <------")
 	return stockDataResults
 
@@ -134,4 +138,10 @@ func processJsonString(stockJsonValue string) StockInfo {
 func roundFloat(val float64, precision uint) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Round(val*ratio) / ratio
+}
+
+func setEnvDev() {
+	os.Setenv("FR_Stock_API_Key", "xxxxxx")
+	os.Setenv("FR_Stock_Symbol", "HD")
+	os.Setenv("FR_Stock_Days", "20")
 }
